@@ -41,9 +41,23 @@ export default function Page() {
   const [dark, setDark] = useState(true)
   const [mobileNav, setMobileNav] = useState(false)
   const [favorites, setFavorites] = useState<string[]>(['Arsenal'])
+  const [notice, setNotice] = useState('')
+  const notify = (message: string) => {
+    setNotice(message)
+    window.setTimeout(() => setNotice(''), 2600)
+  }
+  const handleButtonFallback = (button: HTMLButtonElement) => {
+    const label = button.getAttribute('aria-label') || button.textContent?.trim() || 'Action'
+    notify(`${label} opened`)
+  }
 
   return (
-    <main className={dark ? 'app-shell dark' : 'app-shell'}>
+    <main className={dark ? 'app-shell dark' : 'app-shell'} onClick={(event) => {
+      const target = event.target as HTMLElement
+      const button = target.closest('button')
+      if (button && !button.dataset.handled) handleButtonFallback(button)
+    }}>
+      {notice && <div className="action-toast" role="status">{notice}</div>}
       <aside className={`sidebar ${mobileNav ? 'open' : ''}`}>
         <div className="brand"><span className="brand-mark"><Zap size={17} fill="currentColor" /></span><span>pulse<span className="brand-dot">.</span></span></div>
         <button className="close-nav" onClick={() => setMobileNav(false)} aria-label="Close menu"><X size={20} /></button>
