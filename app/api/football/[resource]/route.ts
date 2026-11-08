@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 const resourceMap = {
   competitions: '/competitions',
   live: '/matches',
+  matches: '/matches',
   fixtures: '/matches',
   results: '/matches',
   standings: (code: string) => `/competitions/${code}/standings`,
