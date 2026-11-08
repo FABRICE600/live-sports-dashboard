@@ -42,6 +42,8 @@ export default function Page() {
   const [mobileNav, setMobileNav] = useState(false)
   const [favorites, setFavorites] = useState<string[]>(['Arsenal'])
   const [notice, setNotice] = useState('')
+  const [footballData, setFootballData] = useState<{ resource: string; data: any } | null>(null)
+  const [footballLoading, setFootballLoading] = useState(false)
   const notify = (message: string) => {
     setNotice(message)
     window.setTimeout(() => setNotice(''), 2600)
@@ -49,6 +51,20 @@ export default function Page() {
   const handleButtonFallback = (button: HTMLButtonElement) => {
     const label = button.getAttribute('aria-label') || button.textContent?.trim() || 'Action'
     notify(`${label} opened`)
+  }
+  const loadFootballData = async (resource: string) => {
+    setFootballLoading(true)
+    try {
+      const response = await fetch(`/api/football/${resource}`)
+      const result = await response.json()
+      if (!response.ok || !result.success) throw new Error(result.message || 'Football API unavailable')
+      setFootballData({ resource, data: result.data })
+      notify(`${resource[0].toUpperCase()}${resource.slice(1)} synced`)
+    } catch (error) {
+      notify(error instanceof Error ? error.message : 'Football API unavailable')
+    } finally {
+      setFootballLoading(false)
+    }
   }
 
   return (
@@ -75,6 +91,7 @@ export default function Page() {
         <div className="page-wrap">
           <div className="welcome-row"><div><p className="date-line"><span className="live-dot" /> Saturday, November 8, 2026</p><h1>Good morning, Jordan <span>✦</span></h1><p className="subhead">Here&apos;s what&apos;s happening in sports today.</p></div><button className="date-button"><CalendarDays size={17} /> Today <ChevronDown size={15} /></button></div>
           <div className="sport-tabs"><button className={sport === 'All sports' ? 'active' : ''} onClick={() => setSport('All sports')}>All sports</button>{sports.map(s => <button key={s.name} className={sport === s.name ? 'active' : ''} onClick={() => setSport(s.name)}>{s.icon} {s.name}</button>)}<button className="more-sports"><MoreHorizontal size={18} /></button></div>
+          <section className="football-api-panel" aria-labelledby="football-api-title"><div><span className="live-pill">Football API</span><h2 id="football-api-title">Live competition data</h2><p>Sync live matches, fixtures, results, standings, teams, and competitions.</p></div><div className="api-actions"><button onClick={() => loadFootballData('live')} disabled={footballLoading}>{footballLoading ? 'Syncing…' : 'Sync live'}</button><button onClick={() => loadFootballData('fixtures')}>Fixtures</button><button onClick={() => loadFootballData('standings')}>Standings</button><button onClick={() => loadFootballData('competitions')}>Competitions</button></div>{footballData && <div className="api-result"><strong>{footballData.resource} loaded</strong><span>{footballData.data?.matches?.length ?? footballData.data?.competitions?.length ?? footballData.data?.standings?.[0]?.table?.length ?? footballData.data?.teams?.length ?? 0} records returned</span><button onClick={() => setFootballData(null)} aria-label="Clear football data"><X size={15} /></button></div>}</section>
           <div className="section-heading"><div><h2>Live now <span className="live-pill">12 live</span></h2><p>Matches happening right now</p></div><button className="text-button">View all <ChevronRight size={16} /></button></div>
           <div className="live-grid">{liveMatches.map((match) => <article className="match-card" key={match.league}><div className="card-top"><span className="competition"><span className={`competition-dot ${match.color}`} />{match.league}</span><button aria-label="More options"><MoreHorizontal size={18} /></button></div><div className="match-status"><span><i className="live-indicator" /> LIVE</span><strong>{match.minute}</strong></div><div className="score-row"><div className="team"><TeamMark label={match.abbr[0]} tone={match.color} /><span>{match.teams[0]}</span></div><strong className="score">{match.score[0]}</strong></div><div className="score-row"><div className="team"><TeamMark label={match.abbr[1]} tone="muted" /><span>{match.teams[1]}</span></div><strong className="score">{match.score[1]}</strong></div><button className="match-detail">Match center <ChevronRight size={15} /></button></article>)}</div>
           <div className="content-grid"><section><div className="section-heading compact"><div><h2>Upcoming fixtures</h2><p>Saturday, November 8</p></div><button className="text-button">Full schedule <ChevronRight size={16} /></button></div><div className="fixture-card">{fixtures.map((fixture, i) => <div className="fixture-row" key={fixture.teams[0]}><div className="fixture-time"><strong>{fixture.time}</strong><small>Today</small></div><div className="fixture-teams"><div><TeamMark label={fixture.logos[0]} tone={i === 0 ? 'red' : 'muted'} />{fixture.teams[0]}</div><div><TeamMark label={fixture.logos[1]} tone={i === 1 ? 'blue' : 'muted'} />{fixture.teams[1]}</div></div><div className="fixture-league">{fixture.competition}</div><button className="star-button" onClick={() => setFavorites([...favorites, fixture.teams[0]])} aria-label={`Favorite ${fixture.teams[0]}`}><Star size={17} fill={favorites.includes(fixture.teams[0]) ? 'currentColor' : 'none'} /></button></div>)}</div></section><aside className="right-column"><div className="section-heading compact"><div><h2>Quick stats</h2><p>Your sports at a glance</p></div><button className="icon-button small"><MoreHorizontal size={18} /></button></div><div className="stats-card"><div className="stat-item"><span className="stat-icon lime"><Activity size={17} /></span><span><small>Live matches</small><strong>12</strong></span><em>+3 today</em></div><div className="stat-item"><span className="stat-icon orange"><Trophy size={17} /></span><span><small>Followed teams</small><strong>08</strong></span><em>+1 this week</em></div><div className="stat-item"><span className="stat-icon blue"><Flame size={17} /></span><span><small>Matches watched</small><strong>24</strong></span><em>+12% this month</em></div></div></aside></div>
