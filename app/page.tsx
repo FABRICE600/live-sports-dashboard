@@ -14,6 +14,8 @@ const navItems = [
   { label: 'Results', icon: Trophy },
   { label: 'Standings', icon: Grid2X2 },
 ]
+const BASKETBALL_LEAGUE_ID = '1ef62e2d-ce3e-44df-96d3-3109186a7934'
+
 const sports = [
   { name: 'Football', icon: '⚽', count: '8 live', color: 'lime' },
   { name: 'Basketball', icon: '🏀', count: '3 live', color: 'orange' },
@@ -58,7 +60,8 @@ export default function Page() {
   const loadFootballData = async (resource: string) => {
     setFootballLoading(true)
     try {
-      const response = await fetch(`/api/football/${resource}`)
+      const query = sport === 'Basketball' ? `?competition=${encodeURIComponent(BASKETBALL_LEAGUE_ID)}` : ''
+      const response = await fetch(`/api/football/${resource}${query}`)
       const result = await response.json()
       if (!response.ok || !result.success) throw new Error(result.message || 'Football API unavailable')
       setFootballData({ resource, data: result.data })
