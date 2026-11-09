@@ -3,8 +3,8 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Pulse — Live Sports Dashboard',
-  description: 'Follow live scores, fixtures, results, and your favorite teams across every sport.',
+  title: 'Live Mutch — Live Sports Dashboard',
+  description: 'Live scores, fixtures, results, and match coverage across football, basketball, tennis, and cricket.',
   generator: 'v0.app',
   icons: {
     icon: [

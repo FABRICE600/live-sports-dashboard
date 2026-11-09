@@ -1,111 +1,51 @@
 'use client'
 
 import { useState } from 'react'
-import {
-  Activity, Bell, CalendarDays, ChevronDown, ChevronRight, CircleHelp, Clock3,
-  Flame, Grid2X2, LayoutDashboard, Menu, Moon, MoreHorizontal, Search, Settings,
-  Shield, Star, Sun, Trophy, Users, X, Zap,
-} from 'lucide-react'
-
-const navItems = [
-  { label: 'Overview', icon: LayoutDashboard },
-  { label: 'Live matches', icon: Activity, badge: '12' },
-  { label: 'Fixtures', icon: CalendarDays },
-  { label: 'Results', icon: Trophy },
-  { label: 'Standings', icon: Grid2X2 },
-]
-const BASKETBALL_LEAGUE_ID = '1ef62e2d-ce3e-44df-96d3-3109186a7934'
+import { Activity, Bell, CalendarDays, ChevronRight, CircleHelp, Home, Info, Menu, Moon, RefreshCw, Search, Shield, Sun, Trophy, Users, X } from 'lucide-react'
 
 const sports = [
-  { name: 'Football', icon: '⚽', count: '8 live', color: 'lime' },
-  { name: 'Basketball', icon: '🏀', count: '3 live', color: 'orange' },
-  { name: 'Tennis', icon: '🎾', count: '1 live', color: 'blue' },
-  { name: 'Cricket', icon: '🏏', count: '2 live', color: 'purple' },
+  { name: 'Football', icon: '⚽', color: 'blue', live: '12', today: '24', league: 'UEFA Champions League' },
+  { name: 'Basketball', icon: '🏀', color: 'orange', live: '8', today: '15', league: 'NBA Season' },
+  { name: 'Tennis', icon: '🎾', color: 'green', live: '6', today: '18', league: 'ATP Tour' },
+  { name: 'Cricket', icon: '🏏', color: 'purple', live: '7', today: '20', league: 'ICC Cricket' },
 ]
-const liveMatches = [
-  { league: 'Premier League', teams: ['Arsenal', 'Chelsea'], abbr: ['AFC', 'CFC'], score: ['2', '1'], minute: "67'", color: 'lime' },
-  { league: 'NBA · Regular Season', teams: ['Lakers', 'Warriors'], abbr: ['LAL', 'GSW'], score: ['84', '79'], minute: 'Q3 · 04:12', color: 'orange' },
-  { league: 'ATP · Paris Masters', teams: ['A. Zverev', 'C. Alcaraz'], abbr: ['AZ', 'CA'], score: ['1', '0'], minute: 'Set 2 · 3—2', color: 'blue' },
+const nav = [
+  { label: 'Home', icon: Home }, { label: 'Football', icon: () => <span>⚽</span> }, { label: 'Basketball', icon: () => <span>🏀</span> }, { label: 'Tennis', icon: () => <span>🎾</span> }, { label: 'Cricket', icon: () => <span>🏏</span> },
 ]
-const fixtures = [
-  { time: '12:30', teams: ['Liverpool', 'Man City'], competition: 'Premier League', logos: ['LIV', 'MCI'] },
-  { time: '15:00', teams: ['Real Madrid', 'Barcelona'], competition: 'La Liga', logos: ['RMA', 'FCB'] },
-  { time: '19:30', teams: ['India', 'Australia'], competition: 'T20 World Cup', logos: ['IND', 'AUS'] },
-]
-
-function TeamMark({ label, tone = 'dark' }: { label: string; tone?: string }) {
-  return <span className={`team-mark ${tone}`}>{label.slice(0, 3).toUpperCase()}</span>
-}
+const upcoming = [['Real Madrid', 'Barcelona', '3:00 PM', 'Football', '⚽'], ['Lakers', 'Celtics', '4:30 PM', 'Basketball', '🏀'], ['Alcaraz', 'Sinner', '5:00 PM', 'Tennis', '🎾'], ['India', 'Australia', '6:00 PM', 'Cricket', '🏏']]
+const results = [['Man City', 'Liverpool', '3 - 1', '2h ago', '⚽'], ['Warriors', 'Nuggets', '112 - 108', '3h ago', '🏀'], ['Djokovic', 'Medvedev', '2 - 0', '4h ago', '🎾'], ['Australia', 'England', '280/7', '5h ago', '🏏']]
 
 export default function Page() {
-  const [active, setActive] = useState('Overview')
-  const [sport, setSport] = useState('All sports')
-  const [dark, setDark] = useState(true)
   const [mobileNav, setMobileNav] = useState(false)
-  const [favorites, setFavorites] = useState<string[]>(['Arsenal'])
+  const [active, setActive] = useState('Home')
+  const [query, setQuery] = useState('')
+  const [updated, setUpdated] = useState('07:15 AM')
   const [notice, setNotice] = useState('')
-  const [footballData, setFootballData] = useState<{ resource: string; data: any } | null>(null)
-  const [footballLoading, setFootballLoading] = useState(false)
-  const [leagueSearch, setLeagueSearch] = useState('')
-  const competitions = footballData?.resource === 'competitions' ? (footballData.data?.competitions || []) : []
-  const filteredCompetitions = competitions.filter((competition: any) => `${competition.name} ${competition.area?.name || ''}`.toLowerCase().includes(leagueSearch.toLowerCase()))
-  const notify = (message: string) => {
-    setNotice(message)
-    window.setTimeout(() => setNotice(''), 2600)
-  }
-  const handleButtonFallback = (button: HTMLButtonElement) => {
-    const label = button.getAttribute('aria-label') || button.textContent?.trim() || 'Action'
-    notify(`${label} opened`)
-  }
-  const loadFootballData = async (resource: string) => {
-    setFootballLoading(true)
-    try {
-      const query = sport === 'Basketball' ? `?competition=${encodeURIComponent(BASKETBALL_LEAGUE_ID)}` : ''
-      const response = await fetch(`/api/football/${resource}${query}`)
-      const result = await response.json()
-      if (!response.ok || !result.success) throw new Error(result.message || 'Football API unavailable')
-      setFootballData({ resource, data: result.data })
-      notify(`${resource[0].toUpperCase()}${resource.slice(1)} synced`)
-    } catch (error) {
-      notify(error instanceof Error ? error.message : 'Football API unavailable')
-    } finally {
-      setFootballLoading(false)
-    }
-  }
-
-  return (
-    <main className={dark ? 'app-shell dark' : 'app-shell'} onClick={(event) => {
-      const target = event.target as HTMLElement
-      const button = target.closest('button')
-      if (button && !button.dataset.handled) handleButtonFallback(button)
-    }}>
-      {notice && <div className="action-toast" role="status">{notice}</div>}
-      <aside className={`sidebar ${mobileNav ? 'open' : ''}`}>
-        <div className="brand"><span className="brand-mark"><Zap size={17} fill="currentColor" /></span><span>pulse<span className="brand-dot">.</span></span></div>
-        <button className="close-nav" onClick={() => setMobileNav(false)} aria-label="Close menu"><X size={20} /></button>
-        <p className="eyebrow">Workspace</p>
-        <nav className="main-nav">
-          {navItems.map((item) => { const Icon = item.icon; return <button key={item.label} className={active === item.label ? 'nav-link active' : 'nav-link'} onClick={() => { setActive(item.label); setMobileNav(false) }}><Icon size={18} /><span>{item.label}</span>{item.badge && <b>{item.badge}</b>}</button> })}
-        </nav>
-        <p className="eyebrow sport-label">Sports</p>
-        <div className="sports-nav">{sports.map((item) => <button key={item.name} className={sport === item.name ? 'sport-link selected' : 'sport-link'} onClick={() => setSport(item.name)}><span className={`sport-icon ${item.color}`}>{item.icon}</span><span>{item.name}</span><small>{item.count}</small></button>)}</div>
-        <div className="sidebar-bottom"><button className="nav-link"><Users size={18} /><span>Teams & players</span></button><button className="nav-link"><Settings size={18} /><span>Settings</span></button><div className="profile"><span className="avatar">JD</span><span><strong>Jordan Davis</strong><small>Free account</small></span><MoreHorizontal size={17} /></div></div>
-      </aside>
-      {mobileNav && <button className="scrim" onClick={() => setMobileNav(false)} aria-label="Close navigation" />}
-      <section className="main-content">
-        <header className="topbar"><button className="mobile-menu" onClick={() => setMobileNav(true)} aria-label="Open menu"><Menu size={22} /></button><div className="breadcrumb"><span>Workspace</span><ChevronRight size={14} /><strong>{active}</strong></div><div className="top-actions"><button className="icon-button" aria-label="Search"><Search size={19} /></button><button className="icon-button" aria-label="Notifications"><Bell size={19} /><i /></button><button className="icon-button theme-button" onClick={() => setDark(!dark)} aria-label="Toggle theme">{dark ? <Sun size={18} /> : <Moon size={18} />}</button><span className="top-avatar">JD</span></div></header>
-        <div className="page-wrap">
-          <div className="welcome-row"><div><p className="date-line"><span className="live-dot" /> Saturday, November 8, 2026</p><h1>Good morning, Jordan <span>✦</span></h1><p className="subhead">Here&apos;s what&apos;s happening in sports today.</p></div><button className="date-button"><CalendarDays size={17} /> Today <ChevronDown size={15} /></button></div>
-          <div className="sport-tabs"><button className={sport === 'All sports' ? 'active' : ''} onClick={() => setSport('All sports')}>All sports</button>{sports.map(s => <button key={s.name} className={sport === s.name ? 'active' : ''} onClick={() => setSport(s.name)}>{s.icon} {s.name}</button>)}<button className="more-sports"><MoreHorizontal size={18} /></button></div>
-          <section className="football-api-panel" aria-labelledby="football-api-title"><div><span className="live-pill">Football API</span><h2 id="football-api-title">Live competition data</h2><p>Sync live matches, fixtures, results, standings, teams, and competitions.</p></div><div className="api-actions"><button onClick={() => loadFootballData('live')} disabled={footballLoading}>{footballLoading ? 'Syncing…' : 'Sync live'}</button><button onClick={() => loadFootballData('matches')}>All matches</button><button onClick={() => loadFootballData('fixtures')}>Fixtures</button><button onClick={() => loadFootballData('standings')}>Standings</button><button onClick={() => loadFootballData('competitions')}>Competitions</button></div>{footballData && <div className="api-result"><strong>{footballData.resource} loaded</strong><span>{footballData.data?.matches?.length ?? footballData.data?.competitions?.length ?? footballData.data?.standings?.[0]?.table?.length ?? footballData.data?.teams?.length ?? 0} records returned</span><button onClick={() => setFootballData(null)} aria-label="Clear football data"><X size={15} /></button></div>}</section>
-          {footballData?.resource === 'competitions' && <section className="league-browser" aria-labelledby="league-browser-title"><div className="league-browser-head"><div><span className="live-pill">Worldwide directory</span><h2 id="league-browser-title">All available leagues</h2><p>Browse every competition returned by your football data plan.</p></div><label className="league-search"><Search size={16} /><span className="sr-only">Search leagues</span><input value={leagueSearch} onChange={(event) => setLeagueSearch(event.target.value)} placeholder="Search leagues or countries" /></label></div><div className="league-list">{filteredCompetitions.map((competition: any) => <button className="league-row" key={competition.id || competition.code} onClick={() => { notify(`${competition.name} selected`); loadFootballData('standings') }}><span className="league-icon"><Trophy size={16} /></span><span><strong>{competition.name}</strong><small>{competition.area?.name || 'International'}{competition.code ? ` · ${competition.code}` : ''}</small></span><ChevronRight size={16} /></button>)}{filteredCompetitions.length === 0 && <p className="empty-state">No leagues match that search.</p>}</div></section>}
-          <div className="section-heading"><div><h2>Live now <span className="live-pill">12 live</span></h2><p>Matches happening right now</p></div><button className="text-button">View all <ChevronRight size={16} /></button></div>
-          <div className="live-grid">{liveMatches.map((match) => <article className="match-card" key={match.league}><div className="card-top"><span className="competition"><span className={`competition-dot ${match.color}`} />{match.league}</span><button aria-label="More options"><MoreHorizontal size={18} /></button></div><div className="match-status"><span><i className="live-indicator" /> LIVE</span><strong>{match.minute}</strong></div><div className="score-row"><div className="team"><TeamMark label={match.abbr[0]} tone={match.color} /><span>{match.teams[0]}</span></div><strong className="score">{match.score[0]}</strong></div><div className="score-row"><div className="team"><TeamMark label={match.abbr[1]} tone="muted" /><span>{match.teams[1]}</span></div><strong className="score">{match.score[1]}</strong></div><button className="match-detail">Match center <ChevronRight size={15} /></button></article>)}</div>
-          <div className="content-grid"><section><div className="section-heading compact"><div><h2>Upcoming fixtures</h2><p>Saturday, November 8</p></div><button className="text-button">Full schedule <ChevronRight size={16} /></button></div><div className="fixture-card">{fixtures.map((fixture, i) => <div className="fixture-row" key={fixture.teams[0]}><div className="fixture-time"><strong>{fixture.time}</strong><small>Today</small></div><div className="fixture-teams"><div><TeamMark label={fixture.logos[0]} tone={i === 0 ? 'red' : 'muted'} />{fixture.teams[0]}</div><div><TeamMark label={fixture.logos[1]} tone={i === 1 ? 'blue' : 'muted'} />{fixture.teams[1]}</div></div><div className="fixture-league">{fixture.competition}</div><button className="star-button" onClick={() => setFavorites([...favorites, fixture.teams[0]])} aria-label={`Favorite ${fixture.teams[0]}`}><Star size={17} fill={favorites.includes(fixture.teams[0]) ? 'currentColor' : 'none'} /></button></div>)}</div></section><aside className="right-column"><div className="section-heading compact"><div><h2>Quick stats</h2><p>Your sports at a glance</p></div><button className="icon-button small"><MoreHorizontal size={18} /></button></div><div className="stats-card"><div className="stat-item"><span className="stat-icon lime"><Activity size={17} /></span><span><small>Live matches</small><strong>12</strong></span><em>+3 today</em></div><div className="stat-item"><span className="stat-icon orange"><Trophy size={17} /></span><span><small>Followed teams</small><strong>08</strong></span><em>+1 this week</em></div><div className="stat-item"><span className="stat-icon blue"><Flame size={17} /></span><span><small>Matches watched</small><strong>24</strong></span><em>+12% this month</em></div></div></aside></div>
-          <div className="bottom-grid"><div className="trend-card"><div className="trend-copy"><span className="trend-badge"><Flame size={14} /> Trending</span><h3>Champions League<br />knockout stage</h3><p>See who&apos;s leading the race to the final.</p><button>Explore competition <ChevronRight size={15} /></button></div><div className="trend-orb"><Trophy size={52} /></div></div><div className="favorite-card"><div className="section-heading compact"><div><h2>My favorites</h2><p>{favorites.length} teams followed</p></div><button className="text-button">Manage <ChevronRight size={16} /></button></div><div className="favorite-team"><TeamMark label="ARS" tone="lime" /><div><strong>Arsenal</strong><small>Premier League · 1st</small></div><span className="form-dot win" /><span className="form-dot win" /><span className="form-dot draw" /><span className="form-dot win" /><ChevronRight size={17} /></div></div></div>
-        </div>
-        <footer><span>Pulse Sports</span><span>Data updates every 60 seconds <span className="footer-dot" /> All systems operational</span><CircleHelp size={15} /></footer>
-      </section>
-    </main>
-  )
+  const [language, setLanguage] = useState('en')
+  const [accent, setAccent] = useState('blue')
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark')
+  const copy = language === 'fr' ? { search: 'Rechercher des équipes, ligues ou matchs...', live: 'En direct', about: 'À propos', watch: 'Regarder en direct', upcoming: 'Matchs à venir', results: 'Résultats récents', view: 'Voir tout', refreshed: 'Données actualisées' } : language === 'es' ? { search: 'Buscar equipos, ligas o partidos...', live: 'En vivo', about: 'Acerca de', watch: 'Ver en vivo', upcoming: 'Próximos partidos', results: 'Resultados recientes', view: 'Ver todo', refreshed: 'Datos actualizados' } : { search: 'Search teams, leagues or matches...', live: 'Live', about: 'About', watch: 'Watch Live', upcoming: 'Upcoming Matches', results: 'Recent Results', view: 'View All', refreshed: 'Sports data refreshed' }
+  const refresh = () => { setUpdated(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })); setNotice(copy.refreshed); window.setTimeout(() => setNotice(''), 2200) }
+  const filtered = upcoming.filter((item) => item.slice(0, 2).join(' ').toLowerCase().includes(query.toLowerCase()))
+  return <main className={`app-shell accent-${accent} theme-${theme}`}>
+    {notice && <div className="action-toast" role="status">{notice}</div>}
+    <aside className={`sidebar ${mobileNav ? 'open' : ''}`}>
+      <div className="brand"><span className="ball">⚽</span><span>Live <b>Mutch</b><small>Live Sports Dashboard</small></span></div>
+      <button className="close-nav" onClick={() => setMobileNav(false)} aria-label="Close menu"><X size={20} /></button>
+      <nav>{nav.map(({ label, icon: Icon }) => <button key={label} onClick={() => { setActive(label); setMobileNav(false) }} className={`nav-link ${active === label ? 'active' : ''}`}><Icon size={20} /><span>{label}</span></button>)}</nav>
+      <div className="nav-divider" />
+      <nav>{[{ label: 'Live Matches', icon: Activity }, { label: 'Upcoming', icon: CalendarDays }, { label: 'Results', icon: Trophy }, { label: 'Teams', icon: Users }, { label: 'Leagues', icon: Shield }, { label: 'Search', icon: Search }].map(({ label, icon: Icon }) => <button key={label} className="nav-link"><Icon size={20} /><span>{label}</span></button>)}</nav>
+      <div className="sidebar-bottom"><button className="nav-link"><Info size={20} /><span>About</span></button><button className="nav-link"><CircleHelp size={20} /><span>Contact</span></button><div className="promo"><span>🏆</span><strong>Live Mutch</strong><small>Sports. Anytime.<br />Anywhere.</small></div><div className="socials">◉　𝕏　●　◎</div></div>
+    </aside>
+    {mobileNav && <button className="scrim" onClick={() => setMobileNav(false)} aria-label="Close navigation" />}
+    <section className="main-content">
+      <header className="topbar"><button className="mobile-menu" onClick={() => setMobileNav(true)} aria-label="Open menu"><Menu size={22} /></button><div className="search"><Search size={20} /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={copy.search} aria-label={copy.search} /></div><div className="top-actions"><span className="live-status"><i /> {copy.live}</span><span className="updated">Last update: {updated}</span><button onClick={refresh} className="icon-button" aria-label="Refresh data"><RefreshCw size={20} /></button><label className="language-picker"><span className="sr-only">Language</span><select value={language} onChange={(e) => setLanguage(e.target.value)} aria-label="Language"><option value="en">EN</option><option value="fr">FR</option><option value="es">ES</option></select></label><div className="color-picker" role="group" aria-label="Accent color">{(['blue', 'green', 'purple', 'orange'] as const).map((color) => <button key={color} className={`color-dot ${color} ${accent === color ? 'selected' : ''}`} onClick={() => setAccent(color)} aria-label={`Use ${color} accent`} />)}</div><button className="theme-toggle" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}>{theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}</button><button className="about-button">{copy.about}</button><Bell size={22} /><span className="user-avatar">JD</span></div></header>
+      <div className="page-wrap">
+        <section className="hero"><div><h1>Live <em>Mutch</em></h1><h2>Your Ultimate Live Sports Dashboard</h2><p>Football <b>•</b> Basketball <b>•</b> Tennis <b>•</b> Cricket</p><button onClick={() => setActive('Live Matches')}>{copy.watch} <ChevronRight size={18} /></button></div></section>
+        <section className="live-strip"><div className="live-label">● LIVE NOW</div>{sports.map((sport) => <div className="strip-match" key={sport.name}><strong><span>{sport.icon}</span> {sport.name}</strong><span>{sport.name === 'Football' ? 'Real Madrid　 2 - 1　 Barcelona' : sport.name === 'Basketball' ? 'Lakers　 98 - 95　 Celtics' : sport.name === 'Tennis' ? 'Alcaraz　 6-4  6-3　 Sinner' : 'IND　 245/6　 vs　 AUS'}</span></div>)}</section>
+        <div className="sport-grid">{sports.map((sport) => <article className={`sport-card ${sport.color}`} key={sport.name}><div className="sport-card-head"><span>{sport.icon}　{sport.name}</span><button onClick={() => setActive(sport.name)}>View All →</button></div><div className="sport-card-body"><div className="sport-art">{sport.icon}</div><h3>{sport.league}</h3></div><div className="sport-card-foot"><span>●　Live {sport.name === 'Basketball' ? 'Games' : 'Matches'}: {sport.live}</span><span>▣　 Today: {sport.today}</span></div></article>)}</div>
+        <div className="tables-grid"><section className="panel"><div className="panel-head"><h2>🏆　{copy.upcoming}</h2><button>{copy.view} →</button></div>{filtered.map((match, i) => <div className="table-row" key={match[0]}><b>{i + 1}</b><span>{match[4]}　{match[0]} <small>vs</small> {match[1]}</span><span className="date">Nov 8, 2026<br /><b>{match[2]}</b></span><strong className={`badge ${match[3].toLowerCase()}`}>{match[3]}</strong></div>)}{filtered.length === 0 && <div className="empty">No matches available at the moment.</div>}</section><section className="panel"><div className="panel-head"><h2>📊　{copy.results}</h2><button>{copy.view} →</button></div>{results.map((match) => <div className="table-row result" key={match[0]}><b>{match[4]}</b><span>{match[1]}</span><strong>{match[2]}</strong><span>{match[0]}</span><small>{match[3]}</small></div>)}</section></div>
+      </div><footer><strong>Live <b>Mutch</b></strong><span>Follow us:　��　𝕏　🔵　◎</span><span>© 2026 Live Mutch. All rights reserved.</span><span className="api-ok">● API Connected</span><span>Privacy　　Terms　　Contact</span></footer>
+    </section>
+  </main>
 }
