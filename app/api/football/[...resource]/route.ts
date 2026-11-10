@@ -25,7 +25,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
   try {
     const response = await fetch(upstreamUrl, {
-      headers: { 'X-Auth-Token': process.env.FOOTBALL_API_KEY || '' },
+      headers: { 'X-Auth-Token': process.env.FOOTBALL_API_KEY || process.env.FOOTBALL_API_KEY_2 || '' },
       next: { revalidate: 60 },
     })
     const data = await response.json()
