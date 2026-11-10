@@ -17,23 +17,31 @@ function buildUpstreamPath(parts: string[]) {
 export async function GET(request: NextRequest, { params }: { params: Promise<{ resource: string[] }> }) {
   const { resource } = await params
   const path = buildUpstreamPath(resource)
-  if (!path) return NextResponse.json({ success: false, message: 'Unknown football resource' }, { status: 404 })
 
-  const query = new URLSearchParams(request.nextUrl.searchParams)
+  if (!path) {
+    return NextResponse.json({ success: false, message: 'Unknown football resource' }, { status: 404 })
+  }
+
+  const apiKey = process.env.FOOTBALL_API_KEY || process.env.FOOTBALL_API_KEY_2
+  if (!apiKey) {
+    return NextResponse.json({ success: false, message: 'FOOTBALL_API_KEY is not configured' }, { status: 500 })
+  }
+
   const upstreamUrl = new URL(`https://api.football-data.org/v4${path}`)
-  query.forEach((value, key) => upstreamUrl.searchParams.set(key, value))
+  request.nextUrl.searchParams.forEach((value, key) => upstreamUrl.searchParams.set(key, value))
 
   try {
-    const response = await fetch(upstreamUrl, {
-      headers: { 'X-Auth-Token': process.env.FOOTBALL_API_KEY || process.env.FOOTBALL_API_KEY_2 || '' },
+    const response = await fetch(upstreamUrl.toString(), {
+      headers: { 'X-Auth-Token': apiKey },
       next: { revalidate: 60 },
     })
     const data = await response.json()
     return NextResponse.json(
-      { success: response.ok, data: response.ok ? data : undefined, message: data.message },
+      { success: response.ok, data: response.ok ? data : undefined, message: response.ok ? undefined : data?.message || 'Football API request failed' },
       { status: response.status },
     )
-  } catch {
+  } catch (error) {
+    console.error('[v0] Football API error:', error)
     return NextResponse.json({ success: false, message: 'Unable to fetch football data' }, { status: 502 })
   }
 }
