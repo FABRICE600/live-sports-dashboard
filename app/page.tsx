@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Activity, Bell, CalendarDays, ChevronRight, CircleHelp, Home, Info, Menu, Moon, RefreshCw, Search, Shield, Sun, Trophy, Users, X } from 'lucide-react'
 
 const sports = [
@@ -24,6 +24,10 @@ export default function Page() {
   const [language, setLanguage] = useState('en')
   const [accent, setAccent] = useState('blue')
   const [theme, setTheme] = useState<'dark' | 'light'>('dark')
+  const [apiStatus, setApiStatus] = useState<'checking' | 'ok' | 'down'>('checking')
+  useEffect(() => {
+    fetch('/api/health').then((r) => setApiStatus(r.ok ? 'ok' : 'down')).catch(() => setApiStatus('down'))
+  }, [])
   const copy = language === 'fr' ? { search: 'Rechercher des équipes, ligues ou matchs...', live: 'En direct', about: 'À propos', watch: 'Regarder en direct', upcoming: 'Matchs à venir', results: 'Résultats récents', view: 'Voir tout', refreshed: 'Données actualisées' } : language === 'es' ? { search: 'Buscar equipos, ligas o partidos...', live: 'En vivo', about: 'Acerca de', watch: 'Ver en vivo', upcoming: 'Próximos partidos', results: 'Resultados recientes', view: 'Ver todo', refreshed: 'Datos actualizados' } : { search: 'Search teams, leagues or matches...', live: 'Live', about: 'About', watch: 'Watch Live', upcoming: 'Upcoming Matches', results: 'Recent Results', view: 'View All', refreshed: 'Sports data refreshed' }
   const refresh = () => { setUpdated(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })); setNotice(copy.refreshed); window.setTimeout(() => setNotice(''), 2200) }
   const filtered = upcoming.filter((item) => item.slice(0, 2).join(' ').toLowerCase().includes(query.toLowerCase()))
@@ -45,7 +49,7 @@ export default function Page() {
         <section className="live-strip"><div className="live-label">● LIVE NOW</div>{sports.map((sport) => <div className="strip-match" key={sport.name}><strong><span>{sport.icon}</span> {sport.name}</strong><span>{sport.name === 'Football' ? 'Real Madrid　 2 - 1　 Barcelona' : sport.name === 'Basketball' ? 'Lakers　 98 - 95　 Celtics' : sport.name === 'Tennis' ? 'Alcaraz　 6-4  6-3　 Sinner' : 'IND　 245/6　 vs　 AUS'}</span></div>)}</section>
         <div className="sport-grid">{sports.map((sport) => <article className={`sport-card ${sport.color}`} key={sport.name}><div className="sport-card-head"><span>{sport.icon}　{sport.name}</span><button onClick={() => setActive(sport.name)}>View All →</button></div><div className="sport-card-body"><div className="sport-art">{sport.icon}</div><h3>{sport.league}</h3></div><div className="sport-card-foot"><span>●　Live {sport.name === 'Basketball' ? 'Games' : 'Matches'}: {sport.live}</span><span>▣　 Today: {sport.today}</span></div></article>)}</div>
         <div className="tables-grid"><section className="panel"><div className="panel-head"><h2>🏆　{copy.upcoming}</h2><button>{copy.view} →</button></div>{filtered.map((match, i) => <div className="table-row" key={match[0]}><b>{i + 1}</b><span>{match[4]}　{match[0]} <small>vs</small> {match[1]}</span><span className="date">Nov 8, 2026<br /><b>{match[2]}</b></span><strong className={`badge ${match[3].toLowerCase()}`}>{match[3]}</strong></div>)}{filtered.length === 0 && <div className="empty">No matches available at the moment.</div>}</section><section className="panel"><div className="panel-head"><h2>📊　{copy.results}</h2><button>{copy.view} →</button></div>{results.map((match) => <div className="table-row result" key={match[0]}><b>{match[4]}</b><span>{match[1]}</span><strong>{match[2]}</strong><span>{match[0]}</span><small>{match[3]}</small></div>)}</section></div>
-      </div><footer><strong>Live <b>Mutch</b></strong><span>Follow us:　��　𝕏　🔵　◎</span><span>© 2026 Live Mutch. All rights reserved.</span><span className="api-ok">● API Connected</span><span>Privacy　　Terms　　Contact</span></footer>
+      </div><footer><strong>Live <b>Mutch</b></strong><span>Follow us:　��　𝕏　🔵　◎</span><span>© 2026 Live Mutch. All rights reserved.</span><span className="api-ok">{apiStatus === 'ok' ? '● API Connected' : apiStatus === 'down' ? '○ API Unavailable' : '● Checking API…'}</span><span>Privacy　　Terms　　Contact</span></footer>
     </section>
   </main>
 }
